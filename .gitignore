@@ -82,3 +82,10 @@ memory/test_credentials.md
 android-sdk/backend/uploads/3f315d6d-027d-4b4d-8f34-40e55567ca76.mov
 backend/uploads/2e60722b-ff87-4895-be1c-a3ec27eda660.mov
 backend/uploads/9586dd77-1952-4991-b0ba-583943ae0c27.mov
+.env
+.env.*
+*.env
+credentials.json
+*.key
+.credentials
+backend/uploads/3f315d6d-027d-4b4d-8f34-40e55567ca76.mov
