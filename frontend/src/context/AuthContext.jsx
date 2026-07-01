@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { users } from '../mock';
+import { resolveUser } from '../mock';
 
 const AuthContext = createContext(null);
-const STORAGE_KEY = 'editvault_session_v1';
+const STORAGE_KEY = 'editvault_session_v2';
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
@@ -22,11 +22,9 @@ export function AuthProvider({ children }) {
   }, []);
 
   const signIn = useCallback(async ({ username, password }) => {
-    const u = users.find(
-      (x) => x.username.toLowerCase() === String(username || '').trim().toLowerCase() && x.password === password
-    );
+    const u = resolveUser(username, password);
     if (!u) return { error: { message: 'Invalid username or password.' } };
-    const prof = { username: u.username, role: u.role, client_id: u.client_id || null, full_name: u.full_name, email: `${u.username}@editvault.local` };
+    const prof = { ...u, email: `${u.username}@editvault.local` };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(prof));
     setSession({ user: { id: u.username } });
     setProfile(prof);
@@ -40,15 +38,11 @@ export function AuthProvider({ children }) {
   }, []);
 
   const value = {
-    session,
-    profile,
-    loading,
+    session, profile, loading,
     isAdmin: profile?.role === 'admin',
     isClient: profile?.role === 'client',
-    signIn,
-    signOut,
+    signIn, signOut,
   };
-
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

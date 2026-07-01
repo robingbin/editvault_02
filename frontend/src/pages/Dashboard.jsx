@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, ListChecks, Clock3, Users2, IndianRupee, AlertTriangle, X } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
-import { clients, videos as ALL_VIDEOS, payments, MONTH_LABEL, getClientById } from '../mock';
+import { clients, videos as ALL_VIDEOS, bills as ALL_BILLS, MONTH_LABEL, getClientById } from '../mock';
 
 function StatCard({ label, value, icon: Icon, tone = 'teal' }) {
   const tones = {
@@ -80,7 +80,7 @@ export default function Dashboard() {
   const pending = useMemo(() => monthVideos.filter((v) => ['Not Started', 'In Progress'].includes(v.editor_status)), [monthVideos]);
   const corrections = useMemo(() => monthVideos.filter((v) => v.client_status === 'Correction'), [monthVideos]);
   const rejected = useMemo(() => monthVideos.filter((v) => v.client_status === 'Rejected'), [monthVideos]);
-  const monthPayments = useMemo(() => payments.filter((p) => p.year === year && p.month === month), [year, month]);
+  const monthPayments = useMemo(() => ALL_BILLS.filter((p) => p.year === year && p.month === month), [year, month]);
 
   const awaiting = monthVideos.filter((v) => v.editor_status === 'Sent To Client' && !['Approved','Correction','Rejected','Posted'].includes(v.client_status)).length;
   const activeClientsCount = clients.filter((c) => c.active).length;
