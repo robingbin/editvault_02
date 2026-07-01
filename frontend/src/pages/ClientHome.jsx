@@ -1,10 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { Play, CheckCircle2, XCircle, MessageSquare, Lock, IndianRupee, ClipboardCheck, Download, Wallet, ReceiptText, Video, CalendarClock } from 'lucide-react';
+import { Play, CheckCircle2, XCircle, MessageSquare, Lock, ClipboardCheck, Download, Wallet, ReceiptText, Video, CalendarClock, ExternalLink } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import MonthYearFilter from '../components/MonthYearFilter';
 import { useAuth } from '../context/AuthContext';
-import { getClientById, getVideosByClient, getExpensesByClient, getBillsByClient, MONTH_LABEL, persist } from '../mock';
+import { getClientById, getVideosByClient, getExpensesByClient, getBillsByClient, MONTH_LABEL, persist, settings } from '../mock';
+import { absoluteUrl, downloadUrl } from '../lib/api';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../components/ui/dialog';
 
 export default function ClientHome() {
@@ -33,9 +35,18 @@ export default function ClientHome() {
     <div className="space-y-6 max-w-[1400px]">
       <div className="rounded-xl border border-[#152223] bg-[#0a1112] p-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-[#e6f7f6]">Welcome, {client.name}</h1>
-            <p className="text-sm text-[#7c9394] mt-1">Review your videos, mark posted dates and track payments.</p>
+          <div className="flex items-center gap-4">
+            {client.logo_url ? (
+              <img src={client.logo_url} alt={client.name} className="w-14 h-14 rounded-xl object-contain bg-[#070d0e] border border-[#243334] p-1" />
+            ) : (
+              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#0f3a37] to-[#0d2a28] border border-[#1e3a3b] flex items-center justify-center text-xl text-[#5eead4] font-semibold">
+                {client.name.slice(0,1)}
+              </div>
+            )}
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight text-[#e6f7f6]">Welcome, {client.name}</h1>
+              <p className="text-sm text-[#7c9394] mt-1">Review your videos, mark posted dates and track payments.</p>
+            </div>
           </div>
           <div className="grid grid-cols-3 gap-3">
             <MiniStat label="Total Billed"  value={`₹${totals.total.toLocaleString()}`} />
@@ -94,13 +105,23 @@ function ReviewGrid({ items, onStatus }) {
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {items.map((v) => (
+        {items.map((v) => {
+          const isImage = v.file_url && /\.(png|jpe?g|gif|webp|svg|bmp)$/i.test(v.file_name || '');
+          const isVideo = v.file_url && /\.(mp4|webm|mov|m4v|ogg)$/i.test(v.file_name || '');
+          return (
           <div key={v.id} className="rounded-xl border border-[#152223] bg-[#0a1112] overflow-hidden">
-            <div className="relative aspect-video bg-[#050b0c] flex items-center justify-center border-b border-[#152223]">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(45,212,191,0.09),transparent_65%)]" />
-              <button onClick={() => toast('Preview (mock)')} className="relative w-14 h-14 rounded-full bg-[#2dd4bf] hover:bg-[#26c1ad] text-[#062626] flex items-center justify-center shadow-lg">
-                <Play className="w-6 h-6 fill-current" />
-              </button>
+            <div className="relative aspect-video bg-[#050b0c] flex items-center justify-center border-b border-[#152223] overflow-hidden">
+              {isVideo ? (
+                <video controls preload="metadata" className="w-full h-full object-contain bg-black" src={absoluteUrl(v.file_url)} />
+              ) : isImage ? (
+                <img src={absoluteUrl(v.file_url)} alt={v.name} className="w-full h-full object-contain" />
+              ) : v.file_url ? (
+                <a href={absoluteUrl(v.file_url)} target="_blank" rel="noreferrer" className="relative w-14 h-14 rounded-full bg-[#2dd4bf] hover:bg-[#26c1ad] text-[#062626] flex items-center justify-center shadow-lg">
+                  <Play className="w-6 h-6 fill-current" />
+                </a>
+              ) : (
+                <div className="text-[#4b6162] text-xs">No preview file uploaded</div>
+              )}
               <div className="absolute top-3 left-3 text-[11px] px-2 py-0.5 rounded border border-[#243334] bg-[#0f1819]/70 text-[#a8bcbd] font-mono">{v.version}</div>
               <div className="absolute top-3 right-3"><StatusBadge status={v.client_status || 'Pending Review'} /></div>
               <div className="absolute bottom-3 right-3 text-[11px] px-2 py-0.5 rounded bg-[#0f1819]/80 text-[#a8bcbd] tabular-nums">{v.duration}</div>
@@ -119,7 +140,8 @@ function ReviewGrid({ items, onStatus }) {
               </div>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       <Dialog open={correctionOpen} onOpenChange={setCorrectionOpen}>
@@ -167,15 +189,16 @@ export function ApprovedTable({ items, refresh, isAdmin }) {
               <th className="text-left px-4 py-3 font-medium">Last Version</th>
               <th className="text-right px-4 py-3 font-medium">Payment</th>
               <th className="text-left px-4 py-3 font-medium">Posted Date</th>
-              <th className="text-left px-4 py-3 font-medium">Status</th>
+              {isAdmin && <th className="text-left px-4 py-3 font-medium">Status</th>}
+              <th className="text-right px-4 py-3 font-medium">Download</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#152223]">
             {items.length === 0 ? (
-              <tr><td colSpan={7} className="px-4 py-10 text-center text-[#6b8788]">No approved items yet.</td></tr>
+              <tr><td colSpan={isAdmin ? 8 : 7} className="px-4 py-10 text-center text-[#6b8788]">No approved items yet.</td></tr>
             ) : items.map((v) => {
               const isLocked = !!v.posted_date;
-              const canEdit = isAdmin || !isLocked; // client can only set once, admin can always edit
+              const canEdit = isAdmin || !isLocked;
               return (
                 <tr key={v.id} className="ev-row">
                   <td className="px-4 py-3 text-[#e6f7f6]">{v.name}</td>
@@ -202,9 +225,22 @@ export function ApprovedTable({ items, refresh, isAdmin }) {
                       ) : <span className="text-[#6b8788] text-xs">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-3">
-                    <StatusBadge status={v.client_status} />
-                    {!isAdmin && isLocked && <div className="text-[10px] text-[#5eead4] mt-1 inline-flex items-center gap-1"><Lock className="w-2.5 h-2.5" /> Locked</div>}
+                  {isAdmin && (
+                    <td className="px-4 py-3">
+                      <StatusBadge status={v.client_status} />
+                    </td>
+                  )}
+                  <td className="px-4 py-3 text-right">
+                    {v.file_url ? (
+                      <a
+                        href={downloadUrl(v.file_url, v.file_name)}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-[#1e5a3d] bg-[#0e2a1e] text-[#4ade80] text-xs font-medium hover:bg-[#123b2b]"
+                      >
+                        <Download className="w-3.5 h-3.5" /> Download
+                      </a>
+                    ) : (
+                      <span className="text-[11px] text-[#6b8788]">no file</span>
+                    )}
                   </td>
                 </tr>
               );
@@ -260,6 +296,7 @@ function ExpensesTable({ expenses, totals }) {
 }
 
 function InvoicesTable({ bills }) {
+  const navigate = useNavigate();
   return (
     <div className="bg-[#0a1112] border border-[#152223] rounded-xl overflow-hidden">
       <div className="px-5 py-4 border-b border-[#152223] flex items-center gap-2">
@@ -270,6 +307,7 @@ function InvoicesTable({ bills }) {
         <table className="w-full text-sm">
           <thead className="bg-[#0d1516] text-[11px] uppercase tracking-wider text-[#6b8788]">
             <tr>
+              <th className="text-left px-4 py-3 font-medium">Invoice #</th>
               <th className="text-left px-4 py-3 font-medium">Period</th>
               <th className="text-left px-4 py-3 font-medium">Generated</th>
               <th className="text-right px-4 py-3 font-medium">Total</th>
@@ -279,16 +317,17 @@ function InvoicesTable({ bills }) {
           </thead>
           <tbody className="divide-y divide-[#152223]">
             {bills.length === 0 ? (
-              <tr><td colSpan={5} className="px-4 py-10 text-center text-[#6b8788]">No invoices yet.</td></tr>
+              <tr><td colSpan={6} className="px-4 py-10 text-center text-[#6b8788]">No invoices yet.</td></tr>
             ) : bills.map((b) => (
               <tr key={b.id} className="ev-row">
+                <td className="px-4 py-3 text-[#e6f7f6] font-mono">{b.invoice_no || b.id}</td>
                 <td className="px-4 py-3 text-[#e6f7f6]">{MONTH_LABEL[b.month-1]} {b.year}</td>
                 <td className="px-4 py-3 text-[#a8bcbd]">{b.generated_at}</td>
                 <td className="px-4 py-3 text-right text-[#e6f7f6] tabular-nums">₹{Number(b.total_amount).toLocaleString()}</td>
                 <td className="px-4 py-3"><StatusBadge status={b.status} /></td>
                 <td className="px-4 py-3 text-right">
-                  <button onClick={() => toast('Invoice download (mock)')} className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded border border-[#243334] bg-[#0f1819] text-[#5eead4] hover:bg-[#152223]">
-                    <Download className="w-3 h-3" /> Download
+                  <button onClick={() => navigate(`/invoice/${b.id}`)} className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded border border-[#243334] bg-[#0f1819] text-[#5eead4] hover:bg-[#152223]">
+                    <ExternalLink className="w-3 h-3" /> View
                   </button>
                 </td>
               </tr>

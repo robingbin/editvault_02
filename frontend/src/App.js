@@ -15,6 +15,8 @@ import ClientDetail from './pages/ClientDetail';
 import ClientPortal from './pages/ClientPortal';
 import ClientPortalDetail from './pages/ClientPortalDetail';
 import ClientHome from './pages/ClientHome';
+import AccountSettings from './pages/AccountSettings';
+import Invoice from './pages/Invoice';
 import NotFound from './pages/NotFound';
 
 function RootRedirect() {
@@ -38,6 +40,16 @@ function App() {
           <Route path="/" element={<RootRedirect />} />
           <Route path="/login" element={<Login />} />
 
+          {/* Invoice — standalone print view, no sidebar */}
+          <Route
+            path="/invoice/:billId"
+            element={
+              <ProtectedRoute>
+                <Invoice />
+              </ProtectedRoute>
+            }
+          />
+
           {/* Admin routes */}
           <Route
             path="/admin"
@@ -52,6 +64,7 @@ function App() {
             <Route path="clients/:id" element={<ClientDetail />} />
             <Route path="portal" element={<ClientPortal />} />
             <Route path="portal/:id" element={<ClientPortalDetail />} />
+            <Route path="settings" element={<AccountSettings />} />
           </Route>
 
           {/* Client routes */}

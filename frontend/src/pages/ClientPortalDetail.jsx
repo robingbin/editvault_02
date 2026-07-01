@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Play, CheckCircle2, XCircle, MessageSquare, Lock, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Play, CheckCircle2, XCircle, MessageSquare, ShieldCheck } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import MonthYearFilter from '../components/MonthYearFilter';
 import { getClientById, getVideosByClient, persist } from '../mock';
+import { absoluteUrl } from '../lib/api';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../components/ui/dialog';
 import { ApprovedTable } from './ClientHome';
@@ -58,13 +59,23 @@ export default function ClientPortalDetail() {
           <div className="text-center py-10 text-[#6b8788] bg-[#0a1112] border border-[#152223] rounded-xl">No videos are pending review in this period.</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {forReview.map((v) => (
+            {forReview.map((v) => {
+              const isImage = v.file_url && /\.(png|jpe?g|gif|webp|svg|bmp)$/i.test(v.file_name || '');
+              const isVideo = v.file_url && /\.(mp4|webm|mov|m4v|ogg)$/i.test(v.file_name || '');
+              return (
               <div key={v.id} className="rounded-xl border border-[#152223] bg-[#0a1112] overflow-hidden">
-                <div className="relative aspect-video bg-[#050b0c] flex items-center justify-center border-b border-[#152223]">
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(45,212,191,0.09),transparent_65%)]" />
-                  <button onClick={() => toast('Preview (mock)')} className="relative w-14 h-14 rounded-full bg-[#2dd4bf] hover:bg-[#26c1ad] text-[#062626] flex items-center justify-center shadow-lg">
-                    <Play className="w-6 h-6 fill-current" />
-                  </button>
+                <div className="relative aspect-video bg-[#050b0c] flex items-center justify-center border-b border-[#152223] overflow-hidden">
+                  {isVideo ? (
+                    <video controls preload="metadata" className="w-full h-full object-contain bg-black" src={absoluteUrl(v.file_url)} />
+                  ) : isImage ? (
+                    <img src={absoluteUrl(v.file_url)} alt={v.name} className="w-full h-full object-contain" />
+                  ) : v.file_url ? (
+                    <a href={absoluteUrl(v.file_url)} target="_blank" rel="noreferrer" className="relative w-14 h-14 rounded-full bg-[#2dd4bf] hover:bg-[#26c1ad] text-[#062626] flex items-center justify-center shadow-lg">
+                      <Play className="w-6 h-6 fill-current" />
+                    </a>
+                  ) : (
+                    <div className="text-[#4b6162] text-xs">No preview file uploaded</div>
+                  )}
                   <div className="absolute top-3 left-3 text-[11px] px-2 py-0.5 rounded border border-[#243334] bg-[#0f1819]/70 text-[#a8bcbd] font-mono">{v.version}</div>
                   <div className="absolute top-3 right-3"><StatusBadge status={v.client_status || 'Pending Review'} /></div>
                   <div className="absolute bottom-3 right-3 text-[11px] px-2 py-0.5 rounded bg-[#0f1819]/80 text-[#a8bcbd] tabular-nums">{v.duration}</div>
@@ -81,7 +92,8 @@ export default function ClientPortalDetail() {
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

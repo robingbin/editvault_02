@@ -27,11 +27,8 @@ export default function Login() {
     navigate(role === 'admin' ? '/admin' : '/portal', { replace: true });
   };
 
-  const fillDemo = (u, p) => { setUsername(u); setPassword(p); };
-
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#070d0e] flex items-center justify-center p-4">
-      {/* Ambient background */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-[#0f3d3a] opacity-40 blur-3xl" />
         <div className="absolute -bottom-32 -right-32 w-[520px] h-[520px] rounded-full bg-[#1a1a4a] opacity-30 blur-3xl" />
@@ -48,7 +45,7 @@ export default function Login() {
 
         <div className="bg-[#0a1112] border border-[#152223] rounded-2xl p-7 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.7)]">
           <h1 className="text-[22px] font-semibold text-[#e6f7f6]">Sign in to EditVault</h1>
-          <p className="text-sm text-[#7c9394] mt-1">Clients use their username. Admins can use their email.</p>
+          <p className="text-sm text-[#7c9394] mt-1">Enter the username and password provided by your admin.</p>
 
           <form onSubmit={onSubmit} className="mt-6 space-y-4">
             <div>
@@ -57,7 +54,7 @@ export default function Login() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
-                placeholder="e.g. abcfitness"
+                placeholder="your username"
                 autoComplete="username"
                 className="focus-teal w-full px-3.5 py-2.5 rounded-lg bg-[#070d0e] border border-[#243334] text-[#e6f7f6] placeholder-[#4b6162] transition-colors"
               />
@@ -96,20 +93,6 @@ export default function Login() {
               <span className="text-[#4b6162]">v1.0</span>
             </div>
           </form>
-
-          <div className="mt-6 pt-5 border-t border-[#152223]">
-            <div className="text-[11.5px] uppercase tracking-wider text-[#6b8788] mb-2">Demo Accounts</div>
-            <div className="grid grid-cols-2 gap-2">
-              <button type="button" onClick={() => fillDemo('admin', 'admin123')} className="px-3 py-2 rounded-md border border-[#243334] bg-[#0f1819] hover:bg-[#152223] text-left">
-                <div className="text-xs text-[#5eead4] font-medium">Admin</div>
-                <div className="text-[11px] text-[#7c9394]">admin / admin123</div>
-              </button>
-              <button type="button" onClick={() => fillDemo('abcfitness', 'client123')} className="px-3 py-2 rounded-md border border-[#2b2a55] bg-[#12122a] hover:bg-[#181840] text-left">
-                <div className="text-xs text-[#a8a5ff] font-medium">Client</div>
-                <div className="text-[11px] text-[#7c7cb0]">abcfitness / client123</div>
-              </button>
-            </div>
-          </div>
         </div>
 
         <p className="text-center text-[11px] text-[#4b6162] mt-6">© {new Date().getFullYear()} EditVault — Video Editing Workflow Management</p>
@@ -120,10 +103,10 @@ export default function Login() {
           <DialogHeader>
             <DialogTitle>Forgot Password</DialogTitle>
             <DialogDescription className="text-[#7c9394]">
-              This is an internal application. Please contact your admin/editor to reset your password.
+              This is an internal application. Please contact your admin to reset your password.
             </DialogDescription>
           </DialogHeader>
-          <p className="text-sm text-[#a8bcbd]">If you’re the admin, contact the platform owner to change any password.</p>
+          <p className="text-sm text-[#a8bcbd]">If you’re the admin, sign in with your admin account and change credentials from Account Settings.</p>
         </DialogContent>
       </Dialog>
     </div>

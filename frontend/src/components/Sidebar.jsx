@@ -1,12 +1,13 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutGrid, Users, Monitor, Clapperboard, LogOut } from 'lucide-react';
+import { LayoutGrid, Users, Monitor, Clapperboard, LogOut, Settings } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const adminItems = [
-  { to: '/admin',         label: 'Dashboard',     icon: LayoutGrid, end: true },
-  { to: '/admin/clients', label: 'Clients',       icon: Users },
-  { to: '/admin/portal',  label: 'Client Portal', icon: Monitor },
+  { to: '/admin',          label: 'Dashboard',        icon: LayoutGrid, end: true },
+  { to: '/admin/clients',  label: 'Clients',          icon: Users },
+  { to: '/admin/portal',   label: 'Client Portal',    icon: Monitor },
+  { to: '/admin/settings', label: 'Account Settings', icon: Settings },
 ];
 const clientItems = [
   { to: '/portal', label: 'Dashboard', icon: Monitor, end: true },

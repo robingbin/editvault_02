@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Phone, Mail, IndianRupee, Plus, Play, Pencil, Trash2, Video, KeyRound, Wallet, ReceiptText, FileText, FilePlus2, Check, X as XIcon, Save, Eye, EyeOff, Copy, Download } from 'lucide-react';
+import { ArrowLeft, Phone, Mail, IndianRupee, Plus, Play, Pencil, Trash2, Video, KeyRound, Wallet, ReceiptText, FilePlus2, Check, X as XIcon, Save, Eye, EyeOff, Copy, Download, Upload, FileText as FileIcon, ExternalLink } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import MonthYearFilter from '../components/MonthYearFilter';
-import { clients, getClientById, getVideosByClient, getExpensesByClient, getBillsByClient, videos as ALL_VIDEOS, expenses as ALL_EXP, bills as ALL_BILLS, categories as CATS, MONTH_LABEL, persist, uid } from '../mock';
+import { clients, getClientById, getVideosByClient, getExpensesByClient, getBillsByClient, videos as ALL_VIDEOS, expenses as ALL_EXP, bills as ALL_BILLS, categories as CATS, MONTH_LABEL, persist, uid, nextInvoiceNo } from '../mock';
+import { uploadFile, absoluteUrl, downloadUrl } from '../lib/api';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../components/ui/dialog';
 
@@ -142,6 +143,7 @@ function VideosTab({ client, videos, refresh, filter }) {
                 <th className="text-left px-4 py-3 font-medium">Category</th>
                 <th className="text-left px-4 py-3 font-medium">Duration</th>
                 <th className="text-left px-4 py-3 font-medium">Ver</th>
+                <th className="text-left px-4 py-3 font-medium">File</th>
                 <th className="text-left px-4 py-3 font-medium">Editor</th>
                 <th className="text-left px-4 py-3 font-medium">Client</th>
                 <th className="text-left px-4 py-3 font-medium">Posted Date</th>
@@ -151,7 +153,7 @@ function VideosTab({ client, videos, refresh, filter }) {
             </thead>
             <tbody className="divide-y divide-[#152223]">
               {videos.length === 0 ? (
-                <tr><td colSpan={10} className="px-4 py-10 text-center text-[#6b8788]">No items in this period.</td></tr>
+                <tr><td colSpan={11} className="px-4 py-10 text-center text-[#6b8788]">No items in this period.</td></tr>
               ) : videos.map((v, idx) => (
                 <tr key={v.id} className="ev-row">
                   <td className="px-4 py-3 text-[#6b8788]">{idx + 1}</td>
@@ -159,6 +161,15 @@ function VideosTab({ client, videos, refresh, filter }) {
                   <td className="px-4 py-3 text-[#a8bcbd]">{v.category}</td>
                   <td className="px-4 py-3 text-[#a8bcbd] tabular-nums">{v.duration}</td>
                   <td className="px-4 py-3"><span className="text-[11px] px-1.5 py-0.5 rounded border border-[#243334] bg-[#0f1819] text-[#a8bcbd] font-mono">{v.version}</span></td>
+                  <td className="px-4 py-3">
+                    {v.file_url ? (
+                      <a href={absoluteUrl(v.file_url)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-[#5eead4] hover:underline max-w-[160px] truncate" title={v.file_name}>
+                        <FileIcon className="w-3 h-3 shrink-0" /> <span className="truncate">{v.file_name || 'file'}</span>
+                      </a>
+                    ) : (
+                      <span className="text-[11px] text-[#6b8788]">no file</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3"><StatusBadge status={v.editor_status} /></td>
                   <td className="px-4 py-3"><StatusBadge status={v.client_status} /></td>
                   <td className="px-4 py-3">
@@ -177,7 +188,11 @@ function VideosTab({ client, videos, refresh, filter }) {
                   <td className="px-4 py-3 text-right text-[#e6f7f6] tabular-nums">₹{v.amount.toLocaleString()}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-1">
-                      <button onClick={() => toast('Preview (mock)')} className="p-1.5 rounded-md text-[#5eead4] hover:bg-[#0f2020]"><Play className="w-4 h-4" /></button>
+                      {v.file_url ? (
+                        <a href={absoluteUrl(v.file_url)} target="_blank" rel="noreferrer" className="p-1.5 rounded-md text-[#5eead4] hover:bg-[#0f2020]"><Play className="w-4 h-4" /></a>
+                      ) : (
+                        <button onClick={() => toast('Upload a file first')} className="p-1.5 rounded-md text-[#4b6162] hover:bg-[#101a1b]"><Play className="w-4 h-4" /></button>
+                      )}
                       <button onClick={() => setEditing(v)} className="p-1.5 rounded-md text-[#a8bcbd] hover:bg-[#101a1b]"><Pencil className="w-4 h-4" /></button>
                       <button onClick={() => remove(v)} className="p-1.5 rounded-md text-[#f87171] hover:bg-[#2a1414]"><Trash2 className="w-4 h-4" /></button>
                     </div>
@@ -202,8 +217,26 @@ function VideoDialog({ open, onOpenChange, client, filter, onSaved, editing }) {
     name: '', category: CATS[0], duration: '00:30', version: 'V1',
     editor_status: 'Not Started', client_status: null, amount: 0,
     year: filter.year, month: filter.month || (new Date().getMonth() + 1),
+    file_url: null, file_name: null,
   });
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
   React.useEffect(() => { if (editing) setForm(editing); }, [editing]);
+
+  const onPickFile = async (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setUploading(true); setProgress(0);
+    try {
+      const res = await uploadFile(f, setProgress);
+      setForm((s) => ({ ...s, file_url: res.url, file_name: res.original_name }));
+      toast.success('File uploaded');
+    } catch (err) {
+      toast.error('Upload failed');
+    } finally {
+      setUploading(false); setProgress(0);
+    }
+  };
 
   const save = () => {
     if (!form.name.trim()) return toast.error('Name required');
@@ -267,6 +300,24 @@ function VideoDialog({ open, onOpenChange, client, filter, onSaved, editing }) {
             </select>
           </FieldWrap>
           <FieldWrap label="Amount (₹)"><input type="number" value={form.amount} onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))} className="focus-teal w-full px-3 py-2 rounded-lg bg-[#070d0e] border border-[#243334] text-sm" /></FieldWrap>
+        </div>
+        <div className="mt-1">
+          <label className="block text-[12px] text-[#a8bcbd] mb-1">Preview File (video / image)</label>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#243334] bg-[#0f1819] text-sm text-[#5eead4] hover:bg-[#152223] cursor-pointer">
+              <Upload className="w-4 h-4" /> {uploading ? `Uploading… ${progress}%` : 'Upload file'}
+              <input type="file" className="hidden" onChange={onPickFile} disabled={uploading} />
+            </label>
+            {form.file_url && (
+              <>
+                <a href={absoluteUrl(form.file_url)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-[#a8bcbd] hover:text-[#e6f7f6] max-w-[220px] truncate">
+                  <FileIcon className="w-3.5 h-3.5 shrink-0" /> <span className="truncate">{form.file_name}</span>
+                </a>
+                <button type="button" onClick={() => setForm((s) => ({ ...s, file_url: null, file_name: null }))} className="text-xs text-[#f87171] hover:underline">Remove</button>
+              </>
+            )}
+          </div>
+          <p className="text-[11px] text-[#6b8788] mt-1">Clients will preview this in the portal and download it after they approve.</p>
         </div>
         <DialogFooter>
           <button onClick={() => onOpenChange(false)} className="px-3.5 py-2 rounded-lg border border-[#243334] bg-[#0f1819] text-sm text-[#a8bcbd] hover:bg-[#152223]">Cancel</button>
@@ -379,6 +430,7 @@ function ExpensesTab({ client, expenses, refresh, filter }) {
 
 /* -------------------------- BILLING TAB -------------------------- */
 function BillingTab({ client, videos, expenses, bills, refresh, filter }) {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const autoSum = useMemo(() => {
     const fromVideos = videos.filter((v) => v.client_status === 'Approved' && v.client_locked).reduce((a, v) => a + Number(v.amount || 0), 0);
@@ -386,26 +438,39 @@ function BillingTab({ client, videos, expenses, bills, refresh, filter }) {
     return fromVideos + fromExp;
   }, [videos, expenses]);
 
-  const [total, setTotal] = useState(autoSum);
-  React.useEffect(() => { setTotal(autoSum); }, [autoSum]);
+  const [form, setForm] = useState({ subtotal: autoSum, discount: 0, tax: 0 });
+  React.useEffect(() => { setForm((f) => ({ ...f, subtotal: autoSum })); }, [autoSum]);
+  const grand = Math.max(0, Number(form.subtotal || 0) - Number(form.discount || 0) + Number(form.tax || 0));
 
   const [year, month] = [filter.year, filter.month === 0 ? new Date().getMonth() + 1 : filter.month];
-
   const existing = bills.find((b) => b.year === year && b.month === month);
 
   const generate = () => {
     if (existing) {
-      existing.total_amount = Number(total) || 0;
+      existing.subtotal = Number(form.subtotal) || 0;
+      existing.discount = Number(form.discount) || 0;
+      existing.tax = Number(form.tax) || 0;
+      existing.total_amount = grand;
       existing.generated_at = new Date().toISOString().slice(0,10);
       toast.success('Bill updated');
     } else {
-      ALL_BILLS.push({ id: uid('b'), client_id: client.id, year, month, total_amount: Number(total) || 0, status: 'Pending', generated_at: new Date().toISOString().slice(0,10), invoice_url: '#' });
+      ALL_BILLS.push({
+        id: uid('b'), client_id: client.id, year, month,
+        invoice_no: nextInvoiceNo(),
+        subtotal: Number(form.subtotal) || 0,
+        discount: Number(form.discount) || 0,
+        tax: Number(form.tax) || 0,
+        total_amount: grand,
+        status: 'Pending',
+        generated_at: new Date().toISOString().slice(0,10),
+      });
       toast.success('Bill generated');
     }
     setOpen(false); refresh();
   };
 
   const markPaid = (b) => { b.status = b.status === 'Paid' ? 'Pending' : 'Paid'; refresh(); toast.success(`Marked ${b.status}`); };
+  const openInvoice = (b) => navigate(`/invoice/${b.id}`);
 
   return (
     <>
@@ -423,6 +488,7 @@ function BillingTab({ client, videos, expenses, bills, refresh, filter }) {
           <table className="w-full text-sm">
             <thead className="bg-[#0d1516] text-[11px] uppercase tracking-wider text-[#6b8788]">
               <tr>
+                <th className="text-left px-4 py-3 font-medium">Invoice #</th>
                 <th className="text-left px-4 py-3 font-medium">Period</th>
                 <th className="text-left px-4 py-3 font-medium">Generated</th>
                 <th className="text-right px-4 py-3 font-medium">Total</th>
@@ -432,16 +498,17 @@ function BillingTab({ client, videos, expenses, bills, refresh, filter }) {
             </thead>
             <tbody className="divide-y divide-[#152223]">
               {bills.length === 0 ? (
-                <tr><td colSpan={5} className="px-4 py-10 text-center text-[#6b8788]">No bills for this period.</td></tr>
+                <tr><td colSpan={6} className="px-4 py-10 text-center text-[#6b8788]">No bills for this period.</td></tr>
               ) : bills.map((b) => (
                 <tr key={b.id} className="ev-row">
+                  <td className="px-4 py-3 text-[#e6f7f6] font-mono">{b.invoice_no || b.id}</td>
                   <td className="px-4 py-3 text-[#e6f7f6]">{MONTH_LABEL[b.month-1]} {b.year}</td>
                   <td className="px-4 py-3 text-[#a8bcbd]">{b.generated_at}</td>
                   <td className="px-4 py-3 text-right text-[#e6f7f6] tabular-nums">₹{Number(b.total_amount).toLocaleString()}</td>
                   <td className="px-4 py-3"><StatusBadge status={b.status} /></td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-2">
-                      <button onClick={() => toast('Invoice download (mock)')} className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded border border-[#243334] bg-[#0f1819] text-[#a8bcbd] hover:bg-[#152223]"><Download className="w-3 h-3" /> Invoice</button>
+                      <button onClick={() => openInvoice(b)} className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded border border-[#243334] bg-[#0f1819] text-[#5eead4] hover:bg-[#152223]"><ExternalLink className="w-3 h-3" /> Invoice</button>
                       <button onClick={() => markPaid(b)} className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded border ${b.status === 'Paid' ? 'border-[#5c4711] bg-[#241d0f] text-[#fbbf24]' : 'border-[#1e5a3d] bg-[#0e2a1e] text-[#4ade80]'} hover:opacity-90`}>
                         <Check className="w-3 h-3" /> {b.status === 'Paid' ? 'Mark Pending' : 'Mark Paid'}
                       </button>
@@ -462,12 +529,24 @@ function BillingTab({ client, videos, expenses, bills, refresh, filter }) {
           </DialogHeader>
           <div className="space-y-3">
             <div className="px-3 py-2 rounded-lg bg-[#0f1819] border border-[#243334] text-sm text-[#a8bcbd] flex justify-between">
-              <span>Auto-sum (videos + expenses)</span>
+              <span>Auto-sum (Approved videos + expenses)</span>
               <span className="text-[#5eead4] tabular-nums">₹{autoSum.toLocaleString()}</span>
             </div>
-            <FieldWrap label="Total Amount (₹)">
-              <input type="number" value={total} onChange={(e) => setTotal(e.target.value)} className="focus-teal w-full px-3 py-2 rounded-lg bg-[#070d0e] border border-[#243334] text-sm" />
-            </FieldWrap>
+            <div className="grid grid-cols-3 gap-3">
+              <FieldWrap label="Subtotal (₹)">
+                <input type="number" value={form.subtotal} onChange={(e) => setForm((s) => ({ ...s, subtotal: e.target.value }))} className="focus-teal w-full px-3 py-2 rounded-lg bg-[#070d0e] border border-[#243334] text-sm" />
+              </FieldWrap>
+              <FieldWrap label="Discount (₹)">
+                <input type="number" value={form.discount} onChange={(e) => setForm((s) => ({ ...s, discount: e.target.value }))} className="focus-teal w-full px-3 py-2 rounded-lg bg-[#070d0e] border border-[#243334] text-sm" />
+              </FieldWrap>
+              <FieldWrap label="Tax (₹)">
+                <input type="number" value={form.tax} onChange={(e) => setForm((s) => ({ ...s, tax: e.target.value }))} className="focus-teal w-full px-3 py-2 rounded-lg bg-[#070d0e] border border-[#243334] text-sm" />
+              </FieldWrap>
+            </div>
+            <div className="mt-1 px-3 py-2 rounded-lg bg-[#0e2a1e] border border-[#1e5a3d] text-sm text-[#4ade80] flex justify-between">
+              <span className="font-semibold">Grand Total</span>
+              <span className="tabular-nums font-bold">₹{grand.toLocaleString()}</span>
+            </div>
             {existing && <div className="text-xs text-[#fbbf24]">A bill already exists for this period. Saving will update it.</div>}
           </div>
           <DialogFooter>
