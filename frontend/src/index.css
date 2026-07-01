@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #070d0e;
+  color: #e6f7f6;
+}
+
+code { font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #0a1112; }
+::-webkit-scrollbar-thumb { background: #1c2b2c; border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: #2a3f40; }
+
+@layer base {
+  :root {
+    --background: 190 30% 4%;
+    --foreground: 175 40% 94%;
+    --card: 188 25% 8%;
+    --card-foreground: 175 40% 94%;
+    --popover: 188 25% 8%;
+    --popover-foreground: 175 40% 94%;
+    --primary: 173 80% 51%;
+    --primary-foreground: 188 40% 6%;
+    --secondary: 188 20% 12%;
+    --secondary-foreground: 175 40% 94%;
+    --muted: 188 20% 12%;
+    --muted-foreground: 175 15% 60%;
+    --accent: 188 20% 12%;
+    --accent-foreground: 175 40% 94%;
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 175 40% 94%;
+    --border: 187 22% 16%;
+    --input: 187 22% 16%;
+    --ring: 173 80% 51%;
+    --radius: 0.5rem;
+  }
+  .dark { color-scheme: dark; }
+}
+
+@layer base {
+  * { @apply border-border; }
+  body { @apply bg-background text-foreground; }
+}
+
+/* Subtle grain / noise overlay utility */
+.ev-grain::before {
+  content: '';
+  position: absolute; inset: 0; pointer-events: none;
+  background-image: radial-gradient(rgba(45,212,191,0.05) 1px, transparent 1px);
+  background-size: 3px 3px;
+  opacity: 0.35;
+}
+
+/* Focus ring override for teal */
+.focus-teal:focus { outline: none; box-shadow: 0 0 0 2px rgba(45,212,191,0.25); border-color: #2dd4bf; }
+
+/* Table row hover */
+.ev-row:hover { background: #10191a; }
