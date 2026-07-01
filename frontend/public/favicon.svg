@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <rect width="64" height="64" rx="14" fill="#0a1112"/>
+  <rect x="6" y="6" width="52" height="52" rx="11" fill="none" stroke="#1e3a3b" stroke-width="1.5"/>
+  <!-- Clapperboard base -->
+  <rect x="12" y="26" width="40" height="26" rx="3" fill="#0f2020" stroke="#2dd4bf" stroke-width="2"/>
+  <!-- Clapperboard top strip -->
+  <path d="M12 20 L52 14 L52 26 L12 26 Z" fill="#2dd4bf"/>
+  <!-- Diagonal stripes on top -->
+  <path d="M20 20 L24 26 M28 19 L32 26 M36 18 L40 26 M44 16.5 L48 26" stroke="#0a1112" stroke-width="2"/>
+  <!-- Play triangle inside board -->
+  <path d="M28 34 L28 46 L40 40 Z" fill="#2dd4bf"/>
+</svg>
