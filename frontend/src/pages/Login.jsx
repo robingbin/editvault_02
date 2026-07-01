@@ -44,8 +44,8 @@ export default function Login() {
         </div>
 
         <div className="bg-[#0a1112] border border-[#152223] rounded-2xl p-7 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.7)]">
-          <h1 className="text-[22px] font-semibold text-[#e6f7f6]">Sign in to EditVault</h1>
-          <p className="text-sm text-[#7c9394] mt-1">Enter the username and password provided by your admin.</p>
+          <h1 className="text-[22px] font-semibold text-[#e6f7f6] text-center">Geebin A R - WorkDesk</h1>
+          <p className="text-sm text-[#7c9394] mt-1 text-center">Enter the username and password provided by your admin.</p>
 
           <form onSubmit={onSubmit} className="mt-6 space-y-4">
             <div>

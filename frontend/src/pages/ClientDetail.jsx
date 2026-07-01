@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Phone, Mail, IndianRupee, Plus, Play, Pencil, Trash2, Video, KeyRound, Wallet, ReceiptText, FilePlus2, Check, X as XIcon, Save, Eye, EyeOff, Copy, Download, Upload, FileText as FileIcon, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Phone, Mail, IndianRupee, Plus, Play, Pencil, Trash2, Video, KeyRound, Wallet, ReceiptText, FilePlus2, Check, X as XIcon, Save, Eye, EyeOff, Copy, Download, Upload, FileText as FileIcon, ExternalLink, Sparkles } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import MonthYearFilter from '../components/MonthYearFilter';
+import CorrectionNotesDialog from '../components/CorrectionNotesDialog';
 import { clients, getClientById, getVideosByClient, getExpensesByClient, getBillsByClient, videos as ALL_VIDEOS, expenses as ALL_EXP, bills as ALL_BILLS, categories as CATS, MONTH_LABEL, persist, uid, nextInvoiceNo } from '../mock';
 import { uploadFile, absoluteUrl, downloadUrl } from '../lib/api';
 import { toast } from 'sonner';
@@ -105,6 +106,7 @@ function VideosTab({ client, videos, refresh, filter }) {
   const [addOpen, setAddOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [postedEdit, setPostedEdit] = useState({ id: null, value: '' });
+  const [notesFor, setNotesFor] = useState(null);
 
   const remove = (v) => {
     const i = ALL_VIDEOS.findIndex((x) => x.id === v.id);
@@ -117,6 +119,14 @@ function VideosTab({ client, videos, refresh, filter }) {
     setPostedEdit({ id: null, value: '' });
     refresh();
     toast.success('Posted date updated');
+  };
+
+  const markCorrectionsUpdated = (v) => {
+    v.editor_status = 'Corrections Updated';
+    // Reset client_status so it moves back into the review queue
+    v.client_status = null;
+    refresh();
+    toast.success('Sent to client for correction approval');
   };
 
   const displayLabel = filter.month === 0 ? `${filter.year}` : `${MONTH_LABEL[filter.month-1]} ${filter.year}`;
@@ -171,7 +181,29 @@ function VideosTab({ client, videos, refresh, filter }) {
                     )}
                   </td>
                   <td className="px-4 py-3"><StatusBadge status={v.editor_status} /></td>
-                  <td className="px-4 py-3"><StatusBadge status={v.client_status} /></td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1.5">
+                      <StatusBadge status={v.client_status} />
+                      {(v.corrections || []).length > 0 && (
+                        <button
+                          onClick={() => setNotesFor(v)}
+                          title="View correction notes"
+                          className="p-1 rounded text-[#fb923c] hover:bg-[#2a1a0f]"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      {v.client_status === 'Correction' && v.editor_status !== 'Corrections Updated' && (
+                        <button
+                          onClick={() => markCorrectionsUpdated(v)}
+                          title="Mark corrections updated & notify client"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-[#2f3670] bg-[#12122a] text-[#a8a5ff] text-[10px] font-medium hover:bg-[#181840]"
+                        >
+                          <Sparkles className="w-3 h-3" /> Updated
+                        </button>
+                      )}
+                    </div>
+                  </td>
                   <td className="px-4 py-3">
                     {postedEdit.id === v.id ? (
                       <div className="flex items-center gap-1.5">
@@ -206,6 +238,15 @@ function VideosTab({ client, videos, refresh, filter }) {
 
       <VideoDialog open={addOpen} onOpenChange={setAddOpen} client={client} filter={filter} onSaved={refresh} />
       <VideoDialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)} client={client} filter={filter} onSaved={refresh} editing={editing} />
+      <CorrectionNotesDialog
+        open={!!notesFor}
+        onOpenChange={(o) => !o && setNotesFor(null)}
+        video={notesFor || {}}
+        as="admin"
+        canAdd={true}
+        onSaved={refresh}
+        composerLabel="Add editor note"
+      />
     </>
   );
 }
@@ -296,7 +337,7 @@ function VideoDialog({ open, onOpenChange, client, filter, onSaved, editing }) {
           <FieldWrap label="Year"><input type="number" value={form.year} onChange={(e) => setForm((f) => ({ ...f, year: Number(e.target.value) }))} className="focus-teal w-full px-3 py-2 rounded-lg bg-[#070d0e] border border-[#243334] text-sm" /></FieldWrap>
           <FieldWrap label="Editor Status">
             <select value={form.editor_status} onChange={(e) => setForm((f) => ({ ...f, editor_status: e.target.value }))} className="focus-teal w-full px-3 py-2 rounded-lg bg-[#070d0e] border border-[#243334] text-sm">
-              {['Not Started', 'In Progress', 'Sent To Client', 'Done'].map((s) => (<option key={s} value={s}>{s}</option>))}
+              {['Not Started', 'In Progress', 'Sent To Client', 'Corrections Updated', 'Done'].map((s) => (<option key={s} value={s}>{s}</option>))}
             </select>
           </FieldWrap>
           <FieldWrap label="Amount (₹)"><input type="number" value={form.amount} onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))} className="focus-teal w-full px-3 py-2 rounded-lg bg-[#070d0e] border border-[#243334] text-sm" /></FieldWrap>
