@@ -4,7 +4,7 @@ import StatusBadge from '../components/StatusBadge';
 import MonthYearFilter from '../components/MonthYearFilter';
 import CorrectionNotesDialog from '../components/CorrectionNotesDialog';
 import { useAuth } from '../context/AuthContext';
-import { getClientById, getVideosByClient, getExpensesByClient, getBillsByClient, MONTH_LABEL, persist, settings } from '../mock';
+import { getClientById, getVideosByClient, getExpensesByClient, getBillsByClient, MONTH_LABEL, persist, settings } from '../lib/store';
 import { absoluteUrl, downloadUrl } from '../lib/api';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -14,7 +14,7 @@ export default function ClientHome() {
   const { profile } = useAuth();
   const client = getClientById(profile?.client_id);
   const [tab, setTab] = useState('review');
-  const [filter, setFilter] = useState({ month: 6, year: 2026 });
+  const [filter, setFilter] = useState(() => { const d = new Date(); return { month: d.getMonth() + 1, year: d.getFullYear() }; });
   const [tick, setTick] = useState(0);
   const refresh = () => { persist(); setTick((n) => n + 1); };
 

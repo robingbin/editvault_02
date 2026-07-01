@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Settings, User, Building2, Image as ImageIcon, DatabaseBackup, Eye, EyeOff, Save, Plus, Trash2, Upload, Download, Shield, KeyRound } from 'lucide-react';
-import { admins, clients, settings, snapshotFor, persist, uid, MONTH_LABEL, availableYears } from '../mock';
+import { admins, clients, settings, snapshotFor, persist, uid, MONTH_LABEL, availableYears } from '../lib/store';
 import { fileToDataURL } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';

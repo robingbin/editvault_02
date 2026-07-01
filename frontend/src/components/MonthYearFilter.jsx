@@ -1,6 +1,6 @@
 import React from 'react';
 import { Calendar } from 'lucide-react';
-import { MONTH_LABEL, availableYears } from '../mock';
+import { MONTH_LABEL, availableYears } from '../lib/store';
 
 export default function MonthYearFilter({ month, year, onChange, className = '' }) {
   const years = availableYears();

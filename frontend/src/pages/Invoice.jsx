@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Printer, ArrowLeft } from 'lucide-react';
-import { bills, getClientById, getVideosByClient, settings, MONTH_LABEL } from '../mock';
+import { bills, getClientById, getVideosByClient, settings, MONTH_LABEL } from '../lib/store';
 
 export default function Invoice() {
   const { billId } = useParams();

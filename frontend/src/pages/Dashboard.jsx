@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, ListChecks, Clock3, Users2, IndianRupee, AlertTriangle, X } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
-import { clients, videos as ALL_VIDEOS, bills as ALL_BILLS, MONTH_LABEL, getClientById } from '../mock';
+import { clients, videos as ALL_VIDEOS, bills as ALL_BILLS, MONTH_LABEL, getClientById } from '../lib/store';
 
 function StatCard({ label, value, icon: Icon, tone = 'teal' }) {
   const tones = {
@@ -73,8 +73,8 @@ function VideoTable({ title, subtitle, videos, tone = 'default' }) {
 export default function Dashboard() {
   const navigate = useNavigate();
   const now = new Date();
-  const year = 2026;
-  const month = 6;
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
 
   const monthVideos = useMemo(() => ALL_VIDEOS.filter((v) => v.year === year && v.month === month), [year, month]);
   const pending = useMemo(() => monthVideos.filter((v) => ['Not Started', 'In Progress'].includes(v.editor_status)), [monthVideos]);
@@ -96,7 +96,7 @@ export default function Dashboard() {
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-[#e6f7f6]">Dashboard</h1>
-          <p className="text-sm text-[#7c9394] mt-1">Overview of your video editing workflow · {MONTH_LABEL[month-1]} {year}</p>
+        <p className="text-sm text-[#7c9394] mt-1">Overview of your video editing workflow · {MONTH_LABEL[month-1]} {year}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button

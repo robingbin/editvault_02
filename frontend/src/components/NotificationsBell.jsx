@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Bell } from 'lucide-react';
-import { activityLog } from '../mock';
+import { activityLog } from '../lib/store';
 
 export default function NotificationsBell() {
   const [open, setOpen] = useState(false);

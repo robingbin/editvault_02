@@ -4,7 +4,7 @@ import { ArrowLeft, Phone, Mail, IndianRupee, Plus, Play, Pencil, Trash2, Video,
 import StatusBadge from '../components/StatusBadge';
 import MonthYearFilter from '../components/MonthYearFilter';
 import CorrectionNotesDialog from '../components/CorrectionNotesDialog';
-import { clients, getClientById, getVideosByClient, getExpensesByClient, getBillsByClient, videos as ALL_VIDEOS, expenses as ALL_EXP, bills as ALL_BILLS, categories as CATS, MONTH_LABEL, persist, uid, nextInvoiceNo } from '../mock';
+import { clients, getClientById, getVideosByClient, getExpensesByClient, getBillsByClient, videos as ALL_VIDEOS, expenses as ALL_EXP, bills as ALL_BILLS, categories as CATS, MONTH_LABEL, persist, uid, nextInvoiceNo } from '../lib/store';
 import { uploadFile, absoluteUrl, downloadUrl } from '../lib/api';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../components/ui/dialog';
@@ -21,7 +21,7 @@ export default function ClientDetail() {
   const navigate = useNavigate();
   const client = getClientById(id);
   const [tab, setTab] = useState('videos');
-  const [filter, setFilter] = useState({ month: 6, year: 2026 });
+  const [filter, setFilter] = useState(() => { const d = new Date(); return { month: d.getMonth() + 1, year: d.getFullYear() }; });
   const [tick, setTick] = useState(0);
 
   const inMonth = React.useCallback((y, m) => (filter.month === 0 ? y === filter.year : y === filter.year && m === filter.month), [filter]);

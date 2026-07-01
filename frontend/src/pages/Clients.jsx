@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Plus, Phone, Mail, ArrowRight, Users, KeyRound, Eye, EyeOff, Pencil, Trash2, ArrowUp, ArrowDown, GripVertical } from 'lucide-react';
-import { clients as ALL, videos, persist, uid } from '../mock';
+import { clients as ALL, videos, persist, uid } from '../lib/store';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../components/ui/alert-dialog';
 import { toast } from 'sonner';

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Monitor, Search, ArrowRight, ClipboardList, AlertCircle } from 'lucide-react';
-import { clients, videos } from '../mock';
+import { clients, videos } from '../lib/store';
 
 function statsForClient(id) {
   const list = videos.filter((v) => v.client_id === id);

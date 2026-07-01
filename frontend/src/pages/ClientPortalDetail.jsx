@@ -4,7 +4,7 @@ import { ArrowLeft, Play, CheckCircle2, XCircle, MessageSquare, ShieldCheck, Eye
 import StatusBadge from '../components/StatusBadge';
 import MonthYearFilter from '../components/MonthYearFilter';
 import CorrectionNotesDialog from '../components/CorrectionNotesDialog';
-import { getClientById, getVideosByClient, persist } from '../mock';
+import { getClientById, getVideosByClient, persist } from '../lib/store';
 import { absoluteUrl } from '../lib/api';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../components/ui/dialog';
@@ -13,7 +13,7 @@ import { ApprovedTable } from './ClientHome';
 export default function ClientPortalDetail() {
   const { id } = useParams();
   const client = getClientById(id);
-  const [filter, setFilter] = useState({ month: 6, year: 2026 });
+  const [filter, setFilter] = useState(() => { const d = new Date(); return { month: d.getMonth() + 1, year: d.getFullYear() }; });
   const [tick, setTick] = useState(0);
   const refresh = () => { persist(); setTick((n) => n + 1); };
 
